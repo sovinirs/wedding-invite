@@ -2,12 +2,14 @@
 //
 // DATABASE_URL is the *pooled* connection the app runs on — serverless functions
 // open many short-lived connections, which exhausts a direct Postgres server.
-// DIRECT_URL is the unpooled connection, used only by `prisma migrate`, which
-// needs a session a connection pooler cannot give it.
+// DATABASE_URL_UNPOOLED is the unpooled connection, used only by `prisma
+// migrate`, which needs a session a connection pooler cannot give it. Both
+// names are what Neon's Vercel integration injects, so production needs no
+// hand-copied variables.
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 generator client {

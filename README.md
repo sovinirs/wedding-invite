@@ -28,7 +28,7 @@ seek past `buffered.end + 0.5s` is refused rather than stalling on black.
 
 ```bash
 npm install
-cp .env.example .env  # then fill in DATABASE_URL, DIRECT_URL, SESSION_SECRET
+cp .env.example .env  # then fill in the DATABASE_URL* vars and SESSION_SECRET
 npm run templates     # render the cinematics (needs ffmpeg)
 npm run db:migrate
 npm run seed          # demo@example.com / demo12345
@@ -145,7 +145,7 @@ for Production *and* Preview. See `.env.example`.
 | Variable | Value |
 |---|---|
 | `DATABASE_URL` | **Pooled** connection string (Neon: the `-pooler` host) |
-| `DIRECT_URL` | **Unpooled** connection string, same database |
+| `DATABASE_URL_UNPOOLED` | **Unpooled** connection string, same database |
 | `SESSION_SECRET` | 32+ random characters, stable across deploys |
 
 ```bash
@@ -173,7 +173,7 @@ database (or a Neon dev branch); otherwise run one in Docker:
 ```bash
 docker run -d --name wi-pg -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=wedding \
   -p 55432:5432 postgres:16-alpine
-# DATABASE_URL=DIRECT_URL="postgresql://postgres:pw@localhost:55432/wedding?schema=public"
+# DATABASE_URL=DATABASE_URL_UNPOOLED="postgresql://postgres:pw@localhost:55432/wedding?schema=public"
 npm run db:migrate
 ```
 
