@@ -1,0 +1,67 @@
+// Local dev uses SQLite. To deploy on Vercel, change `provider` to "postgresql"
+// and set DATABASE_URL to your Postgres connection string. No model changes needed.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime  @default(now())
+
+  invites  Invite[]
+  sessions Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Invite {
+  id     String @id @default(cuid())
+  slug   String @unique
+  userId String
+
+  // Which cinematic template drives the scroll-scrubbed film + score.
+  templateId String @default("temple")
+
+  // Couple
+  partnerOne String
+  partnerTwo String
+
+  // Overlay copy shown across the cinematic scroll
+  eyebrow     String @default("The beginning of a sacred day")
+  taglineLead String @default("Two families gather, one story begins.")
+  taglineSub  String @default("Scroll through the cinematic entrance and arrive at the invitation.")
+  arrivalNote String @default("Step into the celebration")
+
+  // Invitation card
+  blessing   String @default("With the blessings of our elders, we joyfully invite you to witness and celebrate our union.")
+  eventDate  String
+  eventTime  String
+  venueName  String
+  mapsUrl    String?
+  closingNote String @default("Your presence is our greatest blessing")
+
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
