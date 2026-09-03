@@ -1,8 +1,13 @@
-// Local dev uses SQLite. To deploy on Vercel, change `provider` to "postgresql"
-// and set DATABASE_URL to your Postgres connection string. No model changes needed.
+// Postgres, so the data survives Vercel's ephemeral filesystem.
+//
+// DATABASE_URL is the *pooled* connection the app runs on — serverless functions
+// open many short-lived connections, which exhausts a direct Postgres server.
+// DIRECT_URL is the unpooled connection, used only by `prisma migrate`, which
+// needs a session a connection pooler cannot give it.
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {

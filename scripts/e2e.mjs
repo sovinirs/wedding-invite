@@ -39,7 +39,7 @@ await page.fill('input[name="mapsUrl"]', "https://maps.google.com/?q=lalitha+mah
 await page.click('button:has-text("Garden at Dusk")');
 step("selected Garden template");
 await page.click('button[type="submit"]');
-await page.waitForURL(/\/dashboard\/[a-z0-9]+/, { timeout: 15000 });
+await page.waitForURL(/\/dashboard\/c[a-z0-9]{20,}/, { timeout: 15000 });
 step("created → " + page.url());
 
 const share = await page.locator("code").first().innerText();

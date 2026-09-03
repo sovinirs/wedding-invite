@@ -28,9 +28,10 @@ seek past `buffered.end + 0.5s` is refused rather than stalling on black.
 
 ```bash
 npm install
-npm run templates    # render the cinematics (needs ffmpeg)
-npx prisma migrate dev
-npm run seed         # demo@example.com / demo12345
+cp .env.example .env  # then fill in DATABASE_URL, DIRECT_URL, SESSION_SECRET
+npm run templates     # render the cinematics (needs ffmpeg)
+npm run db:migrate
+npm run seed          # demo@example.com / demo12345
 npm run dev
 ```
 
@@ -131,15 +132,50 @@ ownership isolation.
 
 ## Deploying to Vercel
 
-1. In `prisma/schema.prisma`, change `provider = "sqlite"` to `"postgresql"`.
-   No model changes are needed.
-2. Set `DATABASE_URL` to your Postgres connection string and `SESSION_SECRET` to
-   a fresh random value:
-   ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   ```
-3. Run `npx prisma migrate deploy` against the new database.
-4. Deploy. `npm run build` runs `prisma generate` first.
+The app runs on Postgres. Vercel's filesystem is ephemeral, so a SQLite file
+would be wiped on every deploy — the server refuses to boot if `DATABASE_URL`
+still points at one.
+
+**1. Create a Postgres database.** In the Vercel dashboard: Storage -> Create
+Database -> Neon (Postgres). Any Postgres works — Supabase, Railway, RDS.
+
+**2. Set environment variables** (Project -> Settings -> Environment Variables),
+for Production *and* Preview. See `.env.example`.
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | **Pooled** connection string (Neon: the `-pooler` host) |
+| `DIRECT_URL` | **Unpooled** connection string, same database |
+| `SESSION_SECRET` | 32+ random characters, stable across deploys |
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Serverless functions open many short-lived connections, which exhausts a direct
+Postgres server — hence the pooled URL for the app. `prisma migrate` needs a
+session a pooler cannot give it, hence the direct URL for migrations.
+
+`SESSION_SECRET` must not change between deploys, or every existing cookie
+fails to verify and all users are signed out.
+
+**3. Deploy.** `npm run build` runs `prisma generate && prisma migrate deploy`
+before `next build`, so the schema is applied automatically on every deploy.
+
+Config mistakes fail the boot with a readable message (`src/instrumentation.ts`)
+rather than surfacing later as an opaque error digest inside a Server Action.
+
+### Local development
+
+Local dev now needs Postgres too. Simplest is to point `.env` at the same Neon
+database (or a Neon dev branch); otherwise run one in Docker:
+
+```bash
+docker run -d --name wi-pg -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=wedding \
+  -p 55432:5432 postgres:16-alpine
+# DATABASE_URL=DIRECT_URL="postgresql://postgres:pw@localhost:55432/wedding?schema=public"
+npm run db:migrate
+```
 
 ### On scaling the video
 
