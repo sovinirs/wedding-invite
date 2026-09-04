@@ -75,6 +75,7 @@ export function CinematicInvite({
   const scrollerRef = useRef<HTMLDivElement>(null);
   const cardSentinelRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const filmRef = useRef<HTMLDivElement>(null);
 
   const durationRef = useRef(0);
   const targetRef = useRef(0);
@@ -82,7 +83,6 @@ export function CinematicInvite({
   const seekingRef = useRef(false);
   const rafRef = useRef<number | null>(null);
 
-  const [progress, setProgress] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [buffered, setBuffered] = useState(0);
   const [showHint, setShowHint] = useState(true);
@@ -122,7 +122,9 @@ export function CinematicInvite({
 
   // The scrub loop: ease the displayed progress toward the scroll position, then
   // drive the film's playhead from it. Easing here is what turns a jerky flick
-  // into a glide.
+  // into a glide. Progress is written straight to the DOM (film opacity here,
+  // the copy layer in ScrollOverlays) instead of through React state, so a
+  // 60fps scroll doesn't trigger a React re-render on every frame.
   useEffect(() => {
     let alive = true;
 
@@ -136,7 +138,9 @@ export function CinematicInvite({
       smoothed = Math.abs(delta) > 5e-4 ? smoothed + delta * ease : target;
       smoothedRef.current = smoothed;
 
-      setProgress((prev) => (Math.abs(prev - smoothed) > 0.001 ? smoothed : prev));
+      if (filmRef.current) {
+        filmRef.current.style.opacity = String(1 - clamp((smoothed - 0.84) / 0.14));
+      }
 
       if (video) {
         if (video.buffered.length > 0) setBuffered(bufferedFraction(video));
@@ -217,8 +221,6 @@ export function CinematicInvite({
     return () => observer.disconnect();
   }, [entered]);
 
-  // The film dissolves over the last stretch of scroll, revealing the card.
-  const filmOpacity = 1 - clamp((progress - 0.84) / 0.14);
   const showBufferBar = isMobile && videoReady && buffered < 0.8;
   const source = isAndroid && videoMobileSrc ? videoMobileSrc : videoSrc;
 
@@ -229,10 +231,10 @@ export function CinematicInvite({
       <EntryGate videoReady={videoReady} onEnter={handleEnter} template={template} />
 
       <div
+        ref={filmRef}
         className="fixed inset-0 z-0 h-[100svh] w-full overflow-hidden bg-[#120c0b]"
         style={{
-          opacity: filmOpacity,
-          transition: "opacity 200ms linear",
+          opacity: 1,
           willChange: "opacity, transform",
           transform: "translateZ(0)",
         }}
@@ -264,9 +266,8 @@ export function CinematicInvite({
       )}
 
       <ScrollOverlays
-        progress={progress}
+        progressRef={smoothedRef}
         loaded={videoReady}
-        veil={filmOpacity}
         content={content}
         template={template}
       />
