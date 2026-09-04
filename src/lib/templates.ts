@@ -62,6 +62,19 @@ export const TEMPLATES: Template[] = [
       confetti: ["#ffffff", "#ffffff", "#e0f0fa", "#8fb6d4", "#3f6d94", "#f5e3b8", "#ffc9d4"],
     },
   },
+  {
+    id: "church",
+    name: "Chapel Vows",
+    description: "Stained-glass light and a quiet aisle before the vows.",
+    palette: {
+      ink: "#241827",
+      accent: "#7a4f74",
+      soft: "#b79bb3",
+      paper: "#f8f3f7",
+      gold: "#e6d3e2",
+      confetti: ["#ffffff", "#ffffff", "#f3e8f1", "#b79bb3", "#7a4f74", "#f0d68a", "#d4a3c9"],
+    },
+  },
 ];
 
 export const DEFAULT_TEMPLATE_ID = "temple";
