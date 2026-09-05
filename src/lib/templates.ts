@@ -24,7 +24,7 @@ export type Template = {
 
 export const TEMPLATES: Template[] = [
   {
-    id: "temple",
+    id: "temple-1",
     name: "Temple Entrance",
     description: "Warm lamplight and stone corridors opening onto the mandapam.",
     palette: {
@@ -34,6 +34,19 @@ export const TEMPLATES: Template[] = [
       paper: "#fdf6ec",
       gold: "#f6ddad",
       confetti: ["#fdfbf7", "#fdfbf7", "#fdfbf7", "#ff9100", "#ff5e00", "#ffb700", "#e8d5a3"],
+    },
+  },
+  {
+    id: "temple-2",
+    name: "Gopuram at Dusk",
+    description: "Carved towers catch the last light as the temple city hums below.",
+    palette: {
+      ink: "#2a1922",
+      accent: "#a85d3f",
+      soft: "#c98f8a",
+      paper: "#fbf3ee",
+      gold: "#e9c9a8",
+      confetti: ["#fdfbf7", "#fdfbf7", "#f0d68a", "#a85d3f", "#8a5a8f", "#e9c9a8", "#c98f8a"],
     },
   },
   {
@@ -77,7 +90,7 @@ export const TEMPLATES: Template[] = [
   },
 ];
 
-export const DEFAULT_TEMPLATE_ID = "temple";
+export const DEFAULT_TEMPLATE_ID = "temple-1";
 
 export function getTemplate(id: string): Template {
   return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];

@@ -26,7 +26,7 @@ async function main() {
     create: {
       slug: "demo-wedding",
       userId: user.id,
-      templateId: "temple",
+      templateId: "temple-1",
       partnerOne: "Arjun",
       partnerTwo: "Meera",
       eventDate: "November 14, 2026",
