@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Template } from "@/lib/templates";
+import { getCardStyle } from "@/lib/cardStyles";
 import { EntryGate } from "./EntryGate";
 import { ScrollOverlays } from "./ScrollOverlays";
-import { InvitationCard } from "./InvitationCard";
 
 export type InviteContent = {
   partnerOne: string;
@@ -61,16 +61,22 @@ function seekTo(video: HTMLVideoElement, target: number, epsilon = 0.02) {
 export function CinematicInvite({
   content,
   template,
+  cardStyle,
   videoSrc,
   videoMobileSrc,
+  posterSrc,
   audioSrc,
 }: {
   content: InviteContent;
   template: Template;
+  cardStyle: string;
   videoSrc: string;
   videoMobileSrc?: string | null;
+  /** Shown while the video buffers, instead of a black flash — mobile-first, per the brief. */
+  posterSrc?: string | null;
   audioSrc: string;
 }) {
+  const Card = getCardStyle(cardStyle).Component;
   const videoRef = useRef<HTMLVideoElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const cardSentinelRef = useRef<HTMLDivElement>(null);
@@ -243,6 +249,7 @@ export function CinematicInvite({
           ref={videoRef}
           className="cinematic-video h-full w-full object-cover"
           src={source}
+          poster={posterSrc ?? undefined}
           muted
           playsInline
           preload="auto"
@@ -285,7 +292,7 @@ export function CinematicInvite({
         >
           <div className="relative w-full" style={{ height: SCROLL_HEIGHT }} />
           <div ref={cardSentinelRef}>
-            <InvitationCard animate={cardVisible} content={content} template={template} />
+            <Card animate={cardVisible} content={content} template={template} />
           </div>
         </div>
       )}

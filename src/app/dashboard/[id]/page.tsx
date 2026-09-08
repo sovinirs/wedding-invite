@@ -24,6 +24,31 @@ export default async function EditInvitePage({
   const invite = await db.invite.findFirst({ where: { id, userId: user.id } });
   if (!invite) notFound();
 
+  const photos = await db.facePhoto.findMany({
+    where: { inviteId: invite.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, storageUrl: true, role: true },
+  });
+  const existingPhotos = {
+    bride: photos.filter((p) => p.role === "BRIDE").map(({ id, storageUrl }) => ({ id, storageUrl })),
+    groom: photos.filter((p) => p.role === "GROOM").map(({ id, storageUrl }) => ({ id, storageUrl })),
+  };
+
+  const activeStatuses = [
+    "PENDING",
+    "GENERATING_LAST_FRAME",
+    "AWAITING_APPROVAL",
+    "QUEUED_VIDEO",
+    "GENERATING_VIDEO",
+    "ENCODING",
+    "READY",
+    "FAILED",
+  ] as const;
+  const initialJob = await db.generationJob.findFirst({
+    where: { inviteId: invite.id, status: { in: [...activeStatuses] } },
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <Shell>
       <header className="flex items-center justify-between">
@@ -50,10 +75,17 @@ export default async function EditInvitePage({
         action={updateInvite}
         templates={TEMPLATES}
         submitLabel="Save changes"
+        existingPhotos={existingPhotos}
+        initialJob={initialJob}
         draft={{
           id: invite.id,
           slug: invite.slug,
           templateId: invite.templateId,
+          cardStyle: invite.cardStyle,
+          attireBrideId: invite.attireBrideId ?? "",
+          attireGroomId: invite.attireGroomId ?? "",
+          regenerationCount: invite.regenerationCount,
+          maxRegenerations: invite.maxRegenerations,
           partnerOne: invite.partnerOne,
           partnerTwo: invite.partnerTwo,
           eyebrow: invite.eyebrow,

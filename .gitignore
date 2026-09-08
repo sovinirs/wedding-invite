@@ -36,6 +36,11 @@ yarn-error.log*
 # deployment
 .vercel
 
+# generation pipeline output (local-disk storage placeholder — see
+# src/lib/storage.ts; real deploys need an object-storage provider instead,
+# since this filesystem doesn't persist across serverless invocations)
+public/generated
+
 # editors
 .idea
 .vscode/*

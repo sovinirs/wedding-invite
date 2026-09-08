@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/auth";
 import { createInvite } from "@/app/actions";
 import { DEFAULT_TEMPLATE_ID, TEMPLATES } from "@/lib/templates";
+import { DEFAULT_CARD_STYLE_ID } from "@/lib/cardStyles";
 import { InviteForm } from "@/components/InviteForm";
 import { Brand, Shell } from "@/components/ui";
 
@@ -28,6 +29,11 @@ export default async function NewInvitePage() {
         submitLabel="Create invitation"
         draft={{
           templateId: DEFAULT_TEMPLATE_ID,
+          cardStyle: DEFAULT_CARD_STYLE_ID,
+          attireBrideId: "",
+          attireGroomId: "",
+          regenerationCount: 0,
+          maxRegenerations: 2,
           partnerOne: "",
           partnerTwo: "",
           eyebrow: "The beginning of a sacred day",

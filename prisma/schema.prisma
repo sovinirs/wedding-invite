@@ -17,11 +17,11 @@ generator client {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   passwordHash String
   name         String?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime @default(now())
 
   invites  Invite[]
   sessions Session[]
@@ -44,7 +44,39 @@ model Invite {
   userId String
 
   // Which cinematic template drives the scroll-scrubbed film + score.
-  templateId String @default("temple")
+  // Static-template product line (existing). Left in place — a new invite
+  // is either this OR the generated-film pipeline below, never both.
+  templateId String @default("temple-1")
+
+  // Which layout renders the invitation-details card at the end of the
+  // scroll. Independent of templateId — any card style can pair with any
+  // cinematic. Key into the static registry in src/lib/cardStyles.ts.
+  cardStyle String @default("classic")
+
+  // --- Generated-film pipeline (new) ---
+  // Null until the couple starts the AI-generated flow. `venueArchetype` is
+  // the switch: if set, the public invite page is expected to play
+  // `generatedVideoUrl` once a job reaches READY, instead of the static
+  // `templateId` film.
+  venueArchetype String?
+
+  // Catalog ids into the static attire registry (mirrors templateId: a
+  // pointer into code-configured presets, not a foreign key).
+  attireBrideId String?
+  attireGroomId String?
+
+  // Denormalized from the current READY GenerationJob, so the player and
+  // public invite page never need to join through jobs to render.
+  activeGenerationJobId String?
+  generatedVideoUrl     String?
+  posterUrl             String?
+
+  // Regeneration allowance. Configurable per invite (e.g. by plan/tier),
+  // not a global constant. Only customer-initiated "I don't like this"
+  // regenerations increment regenerationCount — provider/infra failures are
+  // retried without spending the customer's allowance.
+  maxRegenerations  Int @default(2)
+  regenerationCount Int @default(0)
 
   // Couple
   partnerOne String
@@ -57,18 +89,111 @@ model Invite {
   arrivalNote String @default("Step into the celebration")
 
   // Invitation card
-  blessing   String @default("With the blessings of our elders, we joyfully invite you to witness and celebrate our union.")
-  eventDate  String
-  eventTime  String
-  venueName  String
-  mapsUrl    String?
-  closingNote String @default("Your presence is our greatest blessing")
+  blessing    String  @default("With the blessings of our elders, we joyfully invite you to witness and celebrate our union.")
+  eventDate   String
+  eventTime   String
+  venueName   String
+  mapsUrl     String?
+  closingNote String  @default("Your presence is our greatest blessing")
 
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facePhotos     FacePhoto[]
+  generationJobs GenerationJob[]
 
   @@index([userId])
+}
+
+enum PhotoRole {
+  BRIDE
+  GROOM
+}
+
+enum ValidationStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+/// A single uploaded face photo. 2-3 rows per invite per role. Validated
+/// synchronously at upload time (face count, frontal-ness, resolution,
+/// sunglasses/filter heuristics) so the customer gets feedback immediately,
+/// not after an expensive generation run.
+model FacePhoto {
+  id       String    @id @default(cuid())
+  inviteId String
+  role     PhotoRole
+
+  storageUrl String
+  width      Int
+  height     Int
+
+  validationStatus ValidationStatus @default(PENDING)
+  validationReason String?
+
+  createdAt DateTime @default(now())
+
+  invite Invite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+
+  @@index([inviteId])
+}
+
+enum JobStatus {
+  PENDING
+  GENERATING_LAST_FRAME
+  AWAITING_APPROVAL
+  QUEUED_VIDEO
+  GENERATING_VIDEO
+  ENCODING
+  READY
+  FAILED
+  CANCELLED
+}
+
+/// One row per generation attempt (including regenerations), so history is
+/// never overwritten. Video generation is queued work, never run inline in
+/// a request handler — this row is that job's persisted state.
+model GenerationJob {
+  id       String    @id @default(cuid())
+  inviteId String
+  status   JobStatus @default(PENDING)
+
+  // In-place retries within this job (infra/provider hiccups). Does not
+  // affect Invite.regenerationCount.
+  attempt Int @default(1)
+
+  lastFrameUrl        String?
+  lastFrameApprovedAt DateTime?
+
+  // Opaque handle from the video provider, used for status polling. See the
+  // VideoGenerationProvider interface — this app never assumes the call
+  // shape the provider needs, only that it returns something pollable.
+  videoProviderRef String?
+  rawVideoUrl      String?
+
+  // Set only after the mandatory all-intra (-g 1) re-encode. This, never
+  // rawVideoUrl, is what gets served — the invite page seeks on scroll, and
+  // a normal-GOP video judders on every seek.
+  finalVideoUrl  String?
+  posterFrameUrl String?
+
+  errorCode    String?
+  errorMessage String?
+
+  // Set when a newer regeneration replaces this job while it was still
+  // in-flight or awaiting approval.
+  supersededBy String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  invite Invite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+
+  @@index([inviteId])
+  @@index([status])
 }

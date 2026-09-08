@@ -37,12 +37,21 @@ export default async function InvitePage({ params }: Params) {
   const template = getTemplate(invite.templateId);
   const base = `/templates/${template.id}`;
 
+  // A completed generation replaces the static template film for this
+  // invite — same player, same encoding contract either way, so nothing
+  // else about CinematicInvite needs to know which source it's playing.
+  const usingGeneratedFilm = Boolean(invite.generatedVideoUrl);
+  const videoSrc = invite.generatedVideoUrl ?? `${base}/video.mp4`;
+  const posterSrc = invite.posterUrl ?? null;
+
   return (
     <main className="relative w-full text-white">
       <CinematicInvite
         template={template}
-        videoSrc={`${base}/video.mp4`}
-        videoMobileSrc={`${base}/video-mobile.mp4`}
+        cardStyle={invite.cardStyle}
+        videoSrc={videoSrc}
+        videoMobileSrc={usingGeneratedFilm ? null : `${base}/video-mobile.mp4`}
+        posterSrc={posterSrc}
         audioSrc={`${base}/music.mp3`}
         content={{
           partnerOne: invite.partnerOne,

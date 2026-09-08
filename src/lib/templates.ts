@@ -4,7 +4,9 @@
  * position drives `video.currentTime` — so what matters is that it is encoded
  * for seeking (short keyframe interval) and stays small enough to buffer fast.
  *
- * To add a template: drop video.mp4 (+ optional video-mobile.mp4) and music.mp3
+ * To add a template: drop video.mp4 (+ optional video-mobile.mp4), music.mp3,
+ * and poster.jpg (a representative still, ~960px wide — used as the picker
+ * thumbnail and the <video poster> so nothing decodes before it's chosen)
  * into public/templates/<id>/, then add an entry here.
  */
 export type Template = {
@@ -94,4 +96,14 @@ export const DEFAULT_TEMPLATE_ID = "temple-1";
 
 export function getTemplate(id: string): Template {
   return TEMPLATES.find((t) => t.id === id) ?? TEMPLATES[0];
+}
+
+export function templateAssetPaths(id: string) {
+  const base = `/templates/${id}`;
+  return {
+    poster: `${base}/poster.jpg`,
+    video: `${base}/video.mp4`,
+    videoMobile: `${base}/video-mobile.mp4`,
+    music: `${base}/music.mp3`,
+  };
 }
